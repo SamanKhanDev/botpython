@@ -1,0 +1,3 @@
+bot.py
+telethon
+asyncio
