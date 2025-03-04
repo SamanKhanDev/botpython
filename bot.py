@@ -2,6 +2,7 @@ from flask import Flask
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 import asyncio
+from threading import Thread
 
 app = Flask(__name__)
 
@@ -13,7 +14,6 @@ def home():
 api_id = 1150656  # To'g'ri API ID kiriting
 api_hash = "fb33d7c76f5bdaab44d5145537de31c0"  # To'g'ri API hash kiriting
 bot_token = "8108266498:AAHTewUwY8lXDlfklgvnzDC_4raqp2csdHc"  # Telegram bot tokenini kiriting
-
 
 # session.txt faylidan StringSession'ni o‘qish
 with open("session.txt", "r") as file:
@@ -48,8 +48,12 @@ async def main():
     await asyncio.gather(user_client.run_until_disconnected(), bot.run_until_disconnected())
 
 if __name__ == "__main__":
-    from threading import Thread
     # Flask serverini alohida threadda ishga tushuramiz
     thread = Thread(target=app.run, kwargs={"host": "0.0.0.0", "port": 8080})
     thread.start()
     asyncio.run(main())
+
+
+
+
+
