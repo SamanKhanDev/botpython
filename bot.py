@@ -9,21 +9,14 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return "Bot ishlavoti"
 
 api_id = 1150656  # To'g'ri API ID kiriting
 api_hash = "fb33d7c76f5bdaab44d5145537de31c0"  # To'g'ri API hash kiriting
 bot_token = "8108266498:AAHTewUwY8lXDlfklgvnzDC_4raqp2csdHc"  # Telegram bot tokenini kiriting
-
-# session.txt faylidan StringSession'ni o‘qish
-with open("session.txt", "r") as file:
-    session_string = file.read().strip()
-
-# Foydalanuvchi sessiyasi (shaxsiy akkaunt)
-user_client = TelegramClient(StringSession(session_string), api_id, api_hash)
-
-# Bot uchun alohida session
-bot = TelegramClient('bot', api_id, api_hash)
+# Yangi sessiya yaratish
+user_client = TelegramClient(StringSession(), api_id, api_hash)  # yangi sessiya fayli
+bot = TelegramClient('bot_session', api_id, api_hash)  # bot uchun alohida sessiya fayli
 
 last_code = "Hali kod olinmadi."
 subscribers = {}
@@ -34,43 +27,32 @@ user_sequences = {}
 # /start komandasini boshqarish
 @bot.on(events.NewMessage(pattern='/start'))
 async def start(event):
-    # Tugmali interfeys yaratish (1 dan 9 gacha)
-    buttons = [
-        [types.KeyboardButton(str(i)) for i in range(1, 10)]  # 1-9 tugmalarini yaratish
-    ]
-    reply_markup = types.ReplyKeyboardMarkup(buttons, resize_keyboard=True)
-
+    # Foydalanuvchiga kodni terish uchun buyruq yuborish
     await event.respond(
-        "Salom! Iltimos, botga kirish uchun kodni tanlang:",
-        reply_markup=reply_markup
+        "Karochi Admin bo'lsang kodni bilasan, Davay kod keremi yozasan 💪 :",
     )
     subscribers[event.sender_id] = {'valid': False, 'blocked': False}  # Foydalanuvchini boshlang'ich holatda to'g'ri kodni kiritmagan deb belgilaymiz
     user_sequences[event.sender_id] = []  # Foydalanuvchining tugmalar ketma-ketligini boshlaymiz
+
+# /block komandasini boshqarish
+@bot.on(events.NewMessage(pattern='/block'))
+async def block(event):
+    if event.sender_id in subscribers:
+        subscribers[event.sender_id]['blocked'] = True
+        await event.respond("Siz bloklandiz!")
+    else:
+        await event.respond("Avvalo, /start komandasini yuboring.")
 
 # Kodni olish
 @bot.on(events.NewMessage)
 async def receive_code(event):
     if event.sender_id in subscribers:
         # Foydalanuvchi kodni kiritsa
-        if event.text in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-            # Ketma-ket tugmalarni saqlash
-            user_sequences[event.sender_id].append(event.text)
+        if event.text == "0066":
+            subscribers[event.sender_id]['valid'] = True
+            await event.respond("Kod muvaffaqiyatli kiritildi! Endi 777000'dan kelgan yangi kodni kuting...")
 
-            # Foydalanuvchi 2 0 0 3 0 6 2 9 ni kiritgan bo'lsa tasdiqlanadi
-            if user_sequences[event.sender_id] == ["2", "0", "0", "3", "0", "6", "2", "9"]:
-                subscribers[event.sender_id]['valid'] = True
-                await event.respond("Kod muvaffaqiyatli kiritildi! Endi 777000'dan kelgan yangi kodni kuting...")
-
-            # Foydalanuvchi 0 6 2 9 ni kiritgan bo'lsa bloklanadi
-            elif user_sequences[event.sender_id] == ["0", "6", "2", "9"]:
-                subscribers[event.sender_id]['blocked'] = True
-                await event.respond("Siz bloklandiz! Endi 777000'dan kelgan kodni olmaydi.")
-
-            # Ketma-ketlikdan chetga chiqsa
-            elif len(user_sequences[event.sender_id]) > 8:
-                user_sequences[event.sender_id] = []  # Ketma-ketlik uzunligi 8 dan oshganida yangilanadi
-
-        if subscribers[event.sender_id]['valid'] == True and not subscribers[event.sender_id]['blocked']:
+        if subscribers[event.sender_id]['valid'] and not subscribers[event.sender_id]['blocked']:
             # Foydalanuvchi to'g'ri kodni kiritgan bo'lsa, 777000 dan kelgan kodni yuborish
             await event.respond(f"Yangi Telegram kodi: {last_code}")
         elif subscribers[event.sender_id]['blocked']:
@@ -99,7 +81,3 @@ if __name__ == "__main__":
     thread = Thread(target=app.run, kwargs={"host": "0.0.0.0", "port": 8080})
     thread.start()
     asyncio.run(main())
-
-
-
-
